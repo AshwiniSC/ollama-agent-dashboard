@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Ollama Agent Dashboard</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui;
+      background: #0f0f0f;
+      color: #eee;
+      display: flex;
+      height: 100vh;
+    }
+
+    #sidebar {
+      width: 260px;
+      background: #1a1a1a;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-right: 1px solid #333;
+    }
+
+    #sidebar h2 {
+      font-size: 14px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .agent-btn {
+      padding: 10px 12px;
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #eee;
+      cursor: pointer;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .agent-btn.active {
+      border-color: #7c3aed;
+      background: #2d1f4e;
+    }
+
+    .agent-btn:hover {
+      background: #333;
+    }
+
+    #new-agent-btn {
+      padding: 10px;
+      background: #7c3aed;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chat-area {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      background: #7c3aed;
+      align-self: flex-end;
+    }
+
+    .agent {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      align-self: flex-start;
+    }
+
+    #input-area {
+      padding: 16px;
+      border-top: 1px solid #333;
+      display: flex;
+      gap: 8px;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #eee;
+      font-size: 14px;
+      resize: none;
+    }
+
+    #send-btn {
+      padding: 12px 20px;
+      background: #7c3aed;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modal.open {
+      display: flex;
+    }
+
+    #modal-box {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 24px;
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #modal-box h3 {
+      font-size: 16px;
+    }
+
+    #modal-box input,
+    #modal-box textarea,
+    #modal-box select {
+      padding: 10px;
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #eee;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    #modal-box textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    #modal-box button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #save-agent-btn {
+      background: #7c3aed;
+      color: white;
+    }
+
+    #cancel-btn {
+      background: #333;
+      color: #eee;
+    }
+
+    #empty-state {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="sidebar">
+    <h2>Agents</h2>
+    <div id="agent-list"></div>
+    <button id="new-agent-btn">+ New Agent</button>
+  </div>
+
+  <div id="main">
+    <div id="chat-area">
+      <div id="empty-state">Select or create an agent to start chatting</div>
+    </div>
+    <div id="input-area">
+      <textarea id="user-input" rows="2" placeholder="Type a message... (Enter to send)"></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <div id="modal">
+    <div id="modal-box">
+      <h3>Create New Agent</h3>
+      <input id="agent-name" placeholder="Agent name (e.g. Code Reviewer)" />
+      <select id="agent-model"></select>
+      <textarea id="agent-prompt"
+        placeholder="System prompt (e.g. You are a senior Python engineer who reviews code for bugs and improvements)"></textarea>
+      <button id="save-agent-btn">Create Agent</button>
+      <button id="cancel-btn">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    let currentAgent = null;
+    let history = [];
+    let isLoading = false;
+
+    async function loadAgents() {
+      const res = await fetch("/agents");
+      const agents = await res.json();
+      const list = document.getElementById("agent-list");
+      list.innerHTML = "";
+      for (const name in agents) {
+        const btn = document.createElement("button");
+        btn.className = "agent-btn" + (name === currentAgent ? " active" : "");
+        btn.textContent = name;
+        btn.onclick = () => selectAgent(name);
+        list.appendChild(btn);
+      }
+    }
+
+    function selectAgent(name) {
+      currentAgent = name;
+      history = [];
+      document.getElementById("chat-area").innerHTML = "";
+      document.getElementById("empty-state") && document.getElementById("empty-state").remove();
+      loadAgents();
+    }
+
+    async function sendMessage() {
+        if (isLoading) return;
+        const input = document.getElementById("user-input");
+        const message = input.value.trim();
+        if (!message || !currentAgent) return;
+
+        isLoading = true;
+        input.value = "";
+        document.getElementById("send-btn").disabled = true;
+
+        addMessage("user", message);
+
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agent_name: currentAgent, message, history })
+        });
+        const data = await res.json();
+
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: data.reply });
+
+        addMessage("agent", data.reply);
+
+        isLoading = false;
+        document.getElementById("send-btn").disabled = false;
+      }
+
+    function addMessage(role, text) {
+      const area = document.getElementById("chat-area");
+      const div = document.createElement("div");
+      div.className = "message " + role;
+      div.textContent = text;
+      area.appendChild(div);
+      area.scrollTop = area.scrollHeight;
+    }
+
+    async function loadModels() {
+      const res = await fetch("/models");
+      const data = await res.json();
+      const select = document.getElementById("agent-model");
+      select.innerHTML = "";
+      data.models.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m; opt.textContent = m;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById("new-agent-btn").onclick = () => {
+      loadModels();
+      document.getElementById("modal").classList.add("open");
+    };
+
+    document.getElementById("cancel-btn").onclick = () => {
+      document.getElementById("modal").classList.remove("open");
+    };
+
+    document.getElementById("save-agent-btn").onclick = async () => {
+      const name = document.getElementById("agent-name").value.trim();
+      const model = document.getElementById("agent-model").value;
+      const prompt = document.getElementById("agent-prompt").value.trim();
+      if (!name || !prompt) return alert("Fill all fields");
+
+      await fetch("/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, model, system_prompt: prompt })
+      });
+
+      document.getElementById("modal").classList.remove("open");
+      loadAgents();
+      selectAgent(name);
+    };
+
+    document.getElementById("send-btn").onclick = sendMessage;
+    document.getElementById("user-input").addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    loadAgents();
+  </script>
+</body>
+
+</html>

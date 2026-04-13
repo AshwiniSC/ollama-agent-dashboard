@@ -1,0 +1,6 @@
+{
+  "Code Reviewer": {
+    "system_prompt": "Code Reviewer",
+    "model": "llama3:latest"
+  }
+}
