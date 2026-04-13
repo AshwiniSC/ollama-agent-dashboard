@@ -1,4 +1,4 @@
-# 🤖 Ollama Agent Dashboard
+# Ollama Agent Dashboard
 
 > Create, manage, and chat with custom AI agents — 100% local, 100% private.
 
@@ -10,17 +10,17 @@ No cloud. No API keys. No data leaving your machine. Just your local models, wit
 
 ---
 
-## ✨ Features
+## Features
 
-- 🧠 **Custom Agents** — Create agents with custom system prompts (Code Reviewer, Research Assistant, anything)
-- 🔌 **All Ollama Models** — Automatically detects every model you have installed
-- 💬 **Full Chat History** — Conversations stay in context during your session
-- 🔒 **100% Private** — Everything runs locally, nothing sent to the cloud
-- ⚡ **Lightweight** — FastAPI backend + plain HTML, no heavy frameworks
+- **Custom Agents** — Create agents with custom system prompts (Code Reviewer, Research Assistant, anything)
+- **All Ollama Models** — Automatically detects every model you have installed
+- **Full Chat History** — Conversations stay in context during your session
+- **100% Private** — Everything runs locally, nothing sent to the cloud
+- **Lightweight** — FastAPI backend + plain HTML, no heavy frameworks
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 **Prerequisites:** Python 3.8+ and [Ollama](https://ollama.ai) running locally
 
@@ -37,7 +37,7 @@ Open your browser at `http://localhost:8000`
 
 ---
 
-## 🛠️ How to Use
+## How to Use
 
 1. Click **+ New Agent**
 2. Give it a name and system prompt (e.g. *"You are a senior Python code reviewer"*)
@@ -46,7 +46,7 @@ Open your browser at `http://localhost:8000`
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Streaming responses
 - [ ] Agent templates (prebuilt prompts)
@@ -55,12 +55,12 @@ Open your browser at `http://localhost:8000`
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 PRs welcome! If you have a feature idea, open an issue first.
 
 ---
 
-## 📄 License
+## License
 
 MIT — free to use, modify, and distribute.
