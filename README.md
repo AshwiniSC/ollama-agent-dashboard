@@ -9,7 +9,7 @@ A local AI agent dashboard for Ollama. Create, manage and chat with custom AI ag
 - Zero cloud, zero data sharing
 
 ## Install
-git clone https://github.com/YOURNAME/ollama-agent-dashboard
+git clone https://github.com/AshwiniSC/ollama-agent-dashboard
 cd ollama-agent-dashboard
 python -m venv venv
 source venv/bin/activate
